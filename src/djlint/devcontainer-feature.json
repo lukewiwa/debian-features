@@ -1,0 +1,30 @@
+{
+  "id": "djlint",
+  "version": "0.0.1",
+  "name": "djlint",
+  "description": "Installs djlint, a linter and formatter for Django templates.",
+  "options": {
+    "version": {
+      "type": "string",
+      "description": "The version of djlint to install",
+      "default": "latest"
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/devcontainers-extra/features/uv:1": {}
+  },
+  "containerEnv": {"UV_TOOL_DIR": "/opt/uv/tools"},
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "djlint.profile": "django",
+        "djlint.useVenv": false,
+        "djlint.pythonPath": "/opt/uv/tools/djlint/bin/python",
+        "[django-html]": {
+          "editor.defaultFormatter": "monosans.djlint"
+        }
+      },
+      "extensions": ["monosans.djlint"]
+    }
+  }
+}
