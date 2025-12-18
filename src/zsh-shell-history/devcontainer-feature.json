@@ -1,0 +1,18 @@
+{
+    "id": "zsh-shell-history",
+    "version": "0.0.1",
+    "name": "zsh persistent shell history",
+    "description": "Persist shell history across dev container rebuilds.",
+    "containerEnv": {
+        "HISTFILE_DIRECTORY": "/opt/features/zsh-shell-history",
+        "HISTFILE": "/opt/features/zsh-shell-history/.zsh_history",
+        "HIST_STAMPS":"iso"
+    },
+    "mounts": [
+        {
+            "source": "zsh-shell-history-${devcontainerId}",
+            "target": "/opt/features/zsh-shell-history",
+            "type": "volume"
+        }
+    ]
+}
