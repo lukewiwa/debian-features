@@ -1,0 +1,27 @@
+{
+    "id": "claude-code-homebrew",
+    "version": "1.0.0",
+    "name": "Claude Code (via Homebrew)",
+    "documentationURL": "https://github.com/lukewiwatowski/debian-features/tree/main/src/claude-code-homebrew",
+    "description": "Claude Code is an agentic coding tool that lives in your terminal",
+    "options": {
+        "version": {
+            "default": "latest",
+            "description": "Select the version to install.",
+            "proposals": [
+                "latest"
+            ],
+            "type": "string"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "anthropic.claude-code"
+            ]
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers-extra/features/homebrew-package"
+    ]
+}
