@@ -4,14 +4,14 @@
     "name": "zsh persistent shell history",
     "description": "Persist shell history across dev container rebuilds.",
     "containerEnv": {
-        "HISTFILE_DIRECTORY": "/opt/features/zsh-shell-history",
-        "HISTFILE": "/opt/features/zsh-shell-history/.zsh_history",
+        "HISTFILE_DIRECTORY": "/usr/share/local/zsh-shell-history",
+        "HISTFILE": "/usr/share/local/zsh-shell-history/.zsh_history",
         "HIST_STAMPS":"iso"
     },
     "mounts": [
         {
             "source": "zsh-shell-history-${devcontainerId}",
-            "target": "/opt/features/zsh-shell-history",
+            "target": "/usr/share/local/zsh-shell-history",
             "type": "volume"
         }
     ]
