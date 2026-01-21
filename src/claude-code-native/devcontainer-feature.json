@@ -1,0 +1,40 @@
+{
+    "id": "claude-code-native",
+    "version": "0.1.0",
+    "name": "Claude Code (native installer)",
+    "documentationURL": "https://github.com/lukewiwa/debian-features/tree/main/src/claude-code-native",
+    "description": "Claude Code is an agentic coding tool that lives in your terminal. Installs via the official native installer and mounts local credentials.",
+    "options": {
+        "version": {
+            "default": "latest",
+            "description": "Version to install: 'stable', 'latest', or a specific semantic version (e.g., '1.2.3')",
+            "proposals": [
+                "latest",
+                "stable"
+            ],
+            "type": "string"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "anthropic.claude-code"
+            ]
+        }
+    },
+    "mounts": [
+        {
+            "source": "${localEnv:HOME}/.claude",
+            "target": "/usr/local/share/claude-config/.claude",
+            "type": "bind"
+        },
+        {
+            "source": "${localEnv:HOME}/.claude.json",
+            "target": "/usr/local/share/claude-config/.claude.json",
+            "type": "bind"
+        }
+    ],
+    "dependsOn": {
+        "ghcr.io/devcontainers-extra/features/curl-apt-get:1": {}
+    }
+}
