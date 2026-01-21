@@ -34,6 +34,7 @@ jobs:
       matrix:
         features:
           - zsh-shell-history
+          - claude-code-native
     steps:
       - uses: actions/checkout@v4
 
