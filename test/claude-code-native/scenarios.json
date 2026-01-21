@@ -1,0 +1,9 @@
+{
+    "pre_create_claude_directory": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "features": {
+            "claude-code-native": {}
+        },
+        "initializeCommand": "mkdir -p ${localEnv:HOME}${localEnv:USERPROFILE}/.claude && touch ${localEnv:HOME}${localEnv:USERPROFILE}/.claude.json"
+    }
+}
