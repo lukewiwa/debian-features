@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "name": "AWS Session Manager (Debian based)",
   "description": "Install the AWS session manager plugin in the development container.",
-  "installsAfter": [
-    "ghcr.io/devcontainers/features/aws-cli"
-  ]
+  "dependsOn": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  }
 }

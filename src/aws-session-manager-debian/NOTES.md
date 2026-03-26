@@ -1,18 +1,3 @@
-# AWS Session Manager Plugin (Debian based)
-
-Installs the AWS Session Manager plugin for Debian-based containers.
-
-## Example Usage
-
-```json
-{
-    "features": {
-        "ghcr.io/devcontainers/features/aws-cli:1": {},
-        "./aws-session-manager": {}
-    }
-}
-```
-
 ## Notes
 
 - This feature should be installed after the AWS CLI feature
