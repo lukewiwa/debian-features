@@ -1,92 +1,40 @@
 # Claude Code Native Installation Notes
 
-## Configuration Mapping
+## Per-project configuration
 
-This devcontainer feature automatically maps in any existing Claude Code configurations from your local machine into the container environment.
+Claude Code's configuration, login and session history live in a named volume,
+`claude-code-config-${devcontainerId}`, one per dev container. Nothing is shared
+with the host or with other projects.
 
-The following directories are mounted from your host machine:
-- `~/.claude` - Main Claude Code configuration directory
-- `~/.claude.json` - Main Claude Code configuration file
+- Log in once per project with `claude` then `/login`. In a headless container
+  Claude prints a URL: open it in your host browser and paste the code back.
+- The volume survives container rebuilds, so you stay logged in.
+- Removing the volume (`docker volume rm claude-code-config-<id>`) logs that
+  project out and clears its config.
 
-This allows you to:
-- Preserve your Claude Code settings and preferences
-- Maintain consistency between local and container environments
-- Avoid reconfiguring Claude Code for each devcontainer
+### Why not share the host's `~/.claude`?
 
-## Prerequisites - IMPORTANT
+Version 0.x bind-mounted the host's `~/.claude` and `~/.claude.json`. That gave
+anything running in the container write access to host settings, including
+hooks that execute on the host the next time Claude runs there, and exposed
+every other project's transcripts and memory. Isolating the config is what makes
+it reasonable to run Claude in the container with fewer permission prompts.
 
-**Bind mounts require source paths to exist on the host machine before the container starts.**
-
-This feature is designed to share your local Claude Code configuration with the container. You should have Claude Code installed and configured on your host machine first. When you install and run Claude Code locally, it automatically creates:
-- `~/.claude/` - Configuration directory
-- `~/.claude.json` - Configuration file
-
-If you don't have Claude Code installed locally yet, install it first before using this devcontainer feature. This ensures your configuration is shared between your local environment and the container.
-
-If you want to use this feature without a local Claude Code installation (not recommended), you can manually create empty placeholders:
-
-```bash
-mkdir -p ~/.claude
-touch ~/.claude.json
-```
-
-However, without a local Claude Code installation, the mounted configuration will be empty and provide no benefit.
-
-## Test Scenarios and CI Validation
-
-The test scenarios use `initializeCommand` to ensure directories exist before container creation:
-
-```json
-"initializeCommand": "mkdir -p ${localEnv:HOME}${localEnv:USERPROFILE}/.claude && touch ${localEnv:HOME}${localEnv:USERPROFILE}/.claude.json"
-```
-
-This command:
-- Runs on the HOST machine (not in container)
-- Executes BEFORE the container is created
-- Ensures bind mount sources exist for CI validation
-- Works cross-platform (Linux/macOS via HOME, Windows via USERPROFILE)
+If you do want host config in a particular project, add the bind mount in that
+project's `devcontainer.json` rather than in this feature.
 
 ## Implementation Details
 
-### Bind Mounts
-The feature uses bind mounts (not volumes) to directly map host directories:
-- Host: `${localEnv:HOME}/.claude` → Container: `/usr/local/share/claude-config/.claude`
-- Host: `${localEnv:HOME}/.claude.json` → Container: `/usr/local/share/claude-config/.claude.json`
+- `CLAUDE_CONFIG_DIR=/usr/local/share/claude-config` is set in `containerEnv`.
+  With it set, Claude keeps `.claude.json` inside that directory too, so there
+  is no single-file mount (which breaks when a file is replaced by rename).
+- `~/.claude` is a symlink to the same directory for tools that expect the
+  default path.
+- The directory is created owned by the remote user at build time; Docker seeds
+  a new named volume from it, so the volume is writable without a chown at start.
 
-### Symlinks
-The install.sh script creates symlinks in the container user's home directory:
-- `~/.claude` → `/usr/local/share/claude-config/.claude`
-- `~/.claude.json` → `/usr/local/share/claude-config/.claude.json`
+## Upgrading from 0.x
 
-This ensures Claude Code reads the mounted configuration regardless of the container user.
-
-## Troubleshooting
-
-### Container fails to start with mount errors
-This usually means Claude Code is not installed on your host machine, or hasn't been run yet to create its configuration files.
-
-Verify the directories exist on your host:
-```bash
-ls -la ~/.claude
-ls -la ~/.claude.json
-```
-
-**Recommended solution**: Install Claude Code on your host machine and run it at least once to create the configuration files.
-
-**Alternative** (if you want to use this feature without local Claude Code): Create placeholder files manually:
-```bash
-mkdir -p ~/.claude
-touch ~/.claude.json
-```
-
-Note: Without a local Claude Code installation, you won't benefit from shared configuration.
-
-### Configuration not persisting between container rebuilds
-Check that symlinks are correctly created:
-```bash
-# Inside container
-ls -la ~/.claude
-ls -la ~/.claude.json
-```
-
-Both should be symlinks pointing to `/usr/local/share/claude-config/`.
+1.0.0 no longer mounts host config. Pin `:1` to opt in and log in again inside
+the container. Placeholder files created for 0.x (`~/.claude.json` via
+`initializeCommand`) are no longer needed.
