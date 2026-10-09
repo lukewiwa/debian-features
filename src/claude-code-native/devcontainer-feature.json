@@ -15,6 +15,7 @@
             "type": "string"
         }
     },
+    "entrypoint": "/usr/local/share/claude-code-native/entrypoint.sh",
     "containerEnv": {
         "CLAUDE_CONFIG_DIR": "/usr/local/share/claude-config"
     },

@@ -30,8 +30,11 @@ project's `devcontainer.json` rather than in this feature.
   is no single-file mount (which breaks when a file is replaced by rename).
 - `~/.claude` is a symlink to the same directory for tools that expect the
   default path.
-- The directory is created owned by the remote user at build time; Docker seeds
-  a new named volume from it, so the volume is writable without a chown at start.
+- The directory is created owned by the remote user at build time, and Docker
+  seeds a new named volume from it. On Linux hosts the dev container CLI then
+  changes the remote user's UID to match the host, so an entrypoint re-chowns
+  the volume at start if its owner no longer matches. That needs the container
+  to start as root, or the container user to have passwordless `sudo`.
 
 ## Upgrading from 0.x
 

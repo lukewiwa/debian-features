@@ -29,13 +29,34 @@ fi
 rm -f "$INSTALL_SCRIPT"
 
 # The per-project volume is mounted here at runtime. A new named volume is
-# seeded from the image's directory, ownership included, so creating it owned
-# by the remote user here is what makes the volume writable without a chown
-# at container start.
+# seeded from the image's directory, ownership included.
 echo "Setting up per-project Claude configuration directory..."
 mkdir -p "$CONFIG_DIR"
 chown "$_REMOTE_USER:" "$CONFIG_DIR"
 chmod 700 "$CONFIG_DIR"
+
+# Build-time ownership is not enough on its own: on Linux hosts the dev
+# container CLI rewrites the remote user's UID to match the host after features
+# install, and only re-chowns the home directory. Fix ownership at start.
+ENTRYPOINT="/usr/local/share/claude-code-native/entrypoint.sh"
+mkdir -p "$(dirname "$ENTRYPOINT")"
+cat > "$ENTRYPOINT" <<EOF
+#!/bin/sh
+dir="$CONFIG_DIR"
+user="$_REMOTE_USER"
+EOF
+cat >> "$ENTRYPOINT" <<'EOF'
+if [ "$(stat -c %u "$dir")" != "$(id -u "$user")" ]; then
+    if [ "$(id -u)" = 0 ]; then
+        chown -R "$user:" "$dir"
+    else
+        sudo -n chown -R "$user:" "$dir" 2>/dev/null \
+            || echo "claude-code-native: cannot chown $dir to $user (no root or sudo)" >&2
+    fi
+fi
+exec "$@"
+EOF
+chmod 755 "$ENTRYPOINT"
 
 # CLAUDE_CONFIG_DIR (set in containerEnv) points Claude at the volume, and
 # .claude.json lives inside it too, so there is no single-file mount to break.
