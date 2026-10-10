@@ -3,6 +3,7 @@
 set -e
 
 CLAUDE_VERSION="${VERSION:-latest}"
+CONFIG_DIR="/usr/local/share/claude-config"
 
 echo "Installing Claude Code ${CLAUDE_VERSION}..."
 
@@ -27,46 +28,47 @@ fi
 
 rm -f "$INSTALL_SCRIPT"
 
-# Ensure /usr/local/share/claude-config exists and has correct permissions
-if [ ! -d "/usr/local/share/claude-config" ]; then
-    mkdir -p /usr/local/share/claude-config
-    chmod 755 /usr/local/share/claude-config
-else
-    chmod 755 /usr/local/share/claude-config
+# The per-project volume is mounted here at runtime. A new named volume is
+# seeded from the image's directory, ownership included.
+echo "Setting up per-project Claude configuration directory..."
+mkdir -p "$CONFIG_DIR"
+chown "$_REMOTE_USER:" "$CONFIG_DIR"
+chmod 700 "$CONFIG_DIR"
+
+# Build-time ownership is not enough on its own: on Linux hosts the dev
+# container CLI rewrites the remote user's UID to match the host after features
+# install, and only re-chowns the home directory. Fix ownership at start.
+ENTRYPOINT="/usr/local/share/claude-code-native/entrypoint.sh"
+mkdir -p "$(dirname "$ENTRYPOINT")"
+cat > "$ENTRYPOINT" <<EOF
+#!/bin/sh
+dir="$CONFIG_DIR"
+user="$_REMOTE_USER"
+EOF
+cat >> "$ENTRYPOINT" <<'EOF'
+if [ "$(stat -c %u "$dir")" != "$(id -u "$user")" ]; then
+    if [ "$(id -u)" = 0 ]; then
+        chown -R "$user:" "$dir"
+    else
+        sudo -n chown -R "$user:" "$dir" 2>/dev/null \
+            || echo "claude-code-native: cannot chown $dir to $user (no root or sudo)" >&2
+    fi
 fi
+exec "$@"
+EOF
+chmod 755 "$ENTRYPOINT"
 
-# Set up Claude configuration from mounted volumes BEFORE installation
-echo "Setting up Claude configuration..."
-
+# CLAUDE_CONFIG_DIR (set in containerEnv) points Claude at the volume, and
+# .claude.json lives inside it too, so there is no single-file mount to break.
+# ~/.claude is linked to it for anything that expects the default path.
 CLAUDE_DIR="${_REMOTE_USER_HOME}/.claude"
-CLAUDE_JSON="${_REMOTE_USER_HOME}/.claude.json"
-
-echo "Ensuring parent directory for Claude configuration exists..."
-su -l "$_REMOTE_USER" -c "mkdir -p $(dirname "$CLAUDE_DIR")"
-
 if [ -L "$CLAUDE_DIR" ]; then
-    echo "Removing existing symlink at $CLAUDE_DIR..."
     rm "$CLAUDE_DIR"
 elif [ -e "$CLAUDE_DIR" ]; then
     echo "$CLAUDE_DIR exists and is not a symlink. Backing up to ${CLAUDE_DIR}.backup..."
     mv "$CLAUDE_DIR" "${CLAUDE_DIR}.backup"
 fi
-echo "Creating symlink for Claude configuration directory..."
-ln -s /usr/local/share/claude-config/.claude "$CLAUDE_DIR"
-chown -h "$_REMOTE_USER:$_REMOTE_USER" "$CLAUDE_DIR"
-
-if [ -f "/usr/local/share/claude-config/claude.json" ]; then
-    if [ -L "$CLAUDE_JSON" ]; then
-        echo "Removing existing symlink at $CLAUDE_JSON..."
-        rm "$CLAUDE_JSON"
-    elif [ -e "$CLAUDE_JSON" ]; then
-        echo "$CLAUDE_JSON exists and is not a symlink. Backing up to ${CLAUDE_JSON}.backup..."
-        mv "$CLAUDE_JSON" "${CLAUDE_JSON}.backup"
-    fi
-    echo "Creating symlink for Claude configuration JSON file..."
-    ln -s /usr/local/share/claude-config/claude.json "$CLAUDE_JSON"
-    chown -h "$_REMOTE_USER:$_REMOTE_USER" "$CLAUDE_JSON"
-fi
-echo "Claude configuration setup complete."
+ln -s "$CONFIG_DIR" "$CLAUDE_DIR"
+chown -h "$_REMOTE_USER:" "$CLAUDE_DIR"
 
 echo "Claude Code ${CLAUDE_VERSION} installation complete!"
