@@ -28,6 +28,14 @@ fi
 
 rm -f "$INSTALL_SCRIPT"
 
+# The installer only puts claude in ~/.local/bin, which isn't on PATH for every
+# shell, user or lifecycle command. Link rather than copy so auto-updates, which
+# repoint ~/.local/bin/claude, carry through.
+if [ -z "$_REMOTE_USER_HOME" ]; then
+    _REMOTE_USER_HOME="$(su - "$_REMOTE_USER" -c 'echo "$HOME"')"
+fi
+ln -sf "${_REMOTE_USER_HOME}/.local/bin/claude" /usr/local/bin/claude
+
 # The per-project volume is mounted here at runtime. A new named volume is
 # seeded from the image's directory, ownership included.
 echo "Setting up per-project Claude configuration directory..."

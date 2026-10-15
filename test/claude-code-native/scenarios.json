@@ -5,5 +5,18 @@
         "features": {
             "claude-code-native": {}
         }
+    },
+    "debian": {
+        "image": "mcr.microsoft.com/devcontainers/base:debian",
+        "remoteUser": "vscode",
+        "features": {
+            "claude-code-native": {}
+        }
+    },
+    "debian_root": {
+        "image": "debian:latest",
+        "features": {
+            "claude-code-native": {}
+        }
     }
 }
