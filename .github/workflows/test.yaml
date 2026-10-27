@@ -35,6 +35,8 @@ jobs:
         features:
           - zsh-shell-history
           - claude-code-native
+          - github-cli-persistent
+          - aws-cli-persistent
     steps:
       - uses: actions/checkout@v4
 

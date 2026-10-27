@@ -1,0 +1,22 @@
+{
+    "per_project_config": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "remoteUser": "vscode",
+        "features": {
+            "aws-cli-persistent": {}
+        }
+    },
+    "debian": {
+        "image": "mcr.microsoft.com/devcontainers/base:debian",
+        "remoteUser": "vscode",
+        "features": {
+            "aws-cli-persistent": {}
+        }
+    },
+    "debian_root": {
+        "image": "debian:latest",
+        "features": {
+            "aws-cli-persistent": {}
+        }
+    }
+}
