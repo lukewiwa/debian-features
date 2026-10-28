@@ -1,10 +1,22 @@
 name: "Release dev container features & Generate Documentation"
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  test:
+    uses: ./.github/workflows/test.yaml
+
   deploy:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [validate, test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -12,6 +24,15 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Check the tag is on main"
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME is not on main; refusing to publish."
+            exit 1
+          fi
 
       - name: "Publish Features"
         uses: devcontainers/action@v1
@@ -43,5 +64,5 @@ jobs:
           # Push
           if [ "$NO_UPDATES" != "true" ] ; then
               git push origin "$branch"
-              gh pr create --title "$message" --body "$message"
+              gh pr create --base main --title "$message" --body "$message"
           fi
