@@ -1,0 +1,18 @@
+{
+    "id": "aws-cli-persistent",
+    "version": "1.0.0",
+    "name": "AWS CLI (persistent login)",
+    "documentationURL": "https://github.com/lukewiwa/debian-features/tree/main/src/aws-cli-persistent",
+    "description": "Installs the AWS CLI and keeps ~/.aws (profiles, credentials and SSO/login caches) in a per-project volume, so you stay logged in across rebuilds without sharing the host's credentials.",
+    "entrypoint": "/usr/local/share/aws-cli-persistent/entrypoint.sh",
+    "mounts": [
+        {
+            "source": "aws-cli-config-${devcontainerId}",
+            "target": "/usr/local/share/aws-config",
+            "type": "volume"
+        }
+    ],
+    "dependsOn": {
+        "ghcr.io/devcontainers/features/aws-cli:1": {}
+    }
+}

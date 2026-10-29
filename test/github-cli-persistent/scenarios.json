@@ -1,0 +1,22 @@
+{
+    "per_project_config": {
+        "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+        "remoteUser": "vscode",
+        "features": {
+            "github-cli-persistent": {}
+        }
+    },
+    "debian": {
+        "image": "mcr.microsoft.com/devcontainers/base:debian",
+        "remoteUser": "vscode",
+        "features": {
+            "github-cli-persistent": {}
+        }
+    },
+    "debian_root": {
+        "image": "debian:latest",
+        "features": {
+            "github-cli-persistent": {}
+        }
+    }
+}

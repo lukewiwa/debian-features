@@ -1,0 +1,28 @@
+{
+    "id": "github-cli-persistent",
+    "version": "1.0.0",
+    "name": "GitHub CLI (persistent login)",
+    "documentationURL": "https://github.com/lukewiwa/debian-features/tree/main/src/github-cli-persistent",
+    "description": "Installs the GitHub CLI and keeps its config and login in a per-project volume, so you stay logged in across rebuilds without sharing the host's credentials.",
+    "options": {
+        "gitCredentialHelper": {
+            "default": true,
+            "description": "Configure git (system-wide) to use gh for github.com credentials, like 'gh auth setup-git'",
+            "type": "boolean"
+        }
+    },
+    "entrypoint": "/usr/local/share/github-cli-persistent/entrypoint.sh",
+    "containerEnv": {
+        "GH_CONFIG_DIR": "/usr/local/share/gh-config"
+    },
+    "mounts": [
+        {
+            "source": "github-cli-config-${devcontainerId}",
+            "target": "/usr/local/share/gh-config",
+            "type": "volume"
+        }
+    ],
+    "dependsOn": {
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    }
+}
