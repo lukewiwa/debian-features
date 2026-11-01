@@ -1,0 +1,17 @@
+{
+    "id": "homebrew-packages",
+    "version": "1.0.0",
+    "name": "Homebrew packages",
+    "documentationURL": "https://github.com/lukewiwa/debian-features/tree/main/src/homebrew-packages",
+    "description": "Installs a list of Homebrew packages, like a Brewfile, in one feature. Installs Homebrew first.",
+    "options": {
+        "packages": {
+            "type": "string",
+            "default": "",
+            "description": "Space- or comma-separated Homebrew formulae to install, e.g. 'bat git-delta fzf'"
+        }
+    },
+    "dependsOn": {
+        "ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2": {}
+    }
+}

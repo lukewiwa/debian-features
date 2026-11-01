@@ -1,0 +1,11 @@
+{
+    "packages": {
+        "image": "mcr.microsoft.com/devcontainers/base:debian",
+        "remoteUser": "vscode",
+        "features": {
+            "homebrew-packages": {
+                "packages": "jq, hello"
+            }
+        }
+    }
+}
