@@ -38,6 +38,7 @@ jobs:
           - claude-code-native
           - github-cli-persistent
           - aws-cli-persistent
+          - homebrew-packages
     steps:
       - uses: actions/checkout@v4
 
