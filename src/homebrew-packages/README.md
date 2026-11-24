@@ -1,7 +1,7 @@
 
 # Homebrew packages (homebrew-packages)
 
-Installs a list of Homebrew packages, like a Brewfile, in one feature. Installs Homebrew first.
+Installs a list of Homebrew packages, like a Brewfile, in one feature. Installs Homebrew first, without cloning homebrew-core.
 
 ## Example Usage
 
@@ -19,8 +19,14 @@ Installs a list of Homebrew packages, like a Brewfile, in one feature. Installs 
 
 ## How it works
 
-- Depends on `ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2`, which
-  installs Homebrew in `/home/linuxbrew/.linuxbrew` and puts it on `PATH`.
+- Installs Homebrew in `/home/linuxbrew/.linuxbrew`, owned by the container's
+  user, and puts it on `PATH` (login shells too). Only `Homebrew/brew` is
+  cloned, shallow, at its latest release: formulae come from Homebrew's JSON
+  API, so there is no homebrew-core clone (several GB). `brew update` still
+  works.
+- The prefix belongs to a `linuxbrew` group the user is in and is
+  group-writable, so Homebrew keeps working on Linux hosts, where the dev
+  container CLI changes the user's UID to match the host's after the build.
 - Runs one `brew install` with every package in `packages`, as the user that
   owns the Homebrew prefix (Homebrew won't run as root).
 - Packages are baked into the image, so rebuilds reuse the cached layer instead
