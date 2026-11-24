@@ -11,7 +11,6 @@
             "description": "Space- or comma-separated Homebrew formulae to install, e.g. 'bat git-delta fzf'"
         }
     },
-    "entrypoint": "/usr/local/share/homebrew-packages/entrypoint.sh",
     "containerEnv": {
         "HOMEBREW_PREFIX": "/home/linuxbrew/.linuxbrew",
         "HOMEBREW_CELLAR": "/home/linuxbrew/.linuxbrew/Cellar",

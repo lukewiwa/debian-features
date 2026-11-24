@@ -5,8 +5,9 @@
   cloned, shallow, at its latest release: formulae come from Homebrew's JSON
   API, so there is no homebrew-core clone (several GB). `brew update` still
   works.
-- On Linux hosts, where the dev container CLI changes the user's UID to match
-  the host's, the Homebrew prefix is handed back to the user at container start.
+- The prefix belongs to a `linuxbrew` group the user is in and is
+  group-writable, so Homebrew keeps working on Linux hosts, where the dev
+  container CLI changes the user's UID to match the host's after the build.
 - Runs one `brew install` with every package in `packages`, as the user that
   owns the Homebrew prefix (Homebrew won't run as root).
 - Packages are baked into the image, so rebuilds reuse the cached layer instead

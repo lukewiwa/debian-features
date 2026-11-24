@@ -56,28 +56,20 @@ else
 fi
 
 # On Linux hosts the dev container CLI changes the user's UID to match the
-# host's after the image is built (updateRemoteUserUID), which leaves the
-# prefix owned by the old UID and Homebrew unable to write to it. Hand it back
-# at container start.
-ENTRYPOINT="/usr/local/share/homebrew-packages/entrypoint.sh"
-mkdir -p "$(dirname "$ENTRYPOINT")"
-cat > "$ENTRYPOINT" <<EOF
-#!/bin/sh
-dir="$PREFIX"
-user="$BREW_USER"
-EOF
-cat >> "$ENTRYPOINT" <<'EOF'
-if [ "$(stat -c %u "$dir")" != "$(id -u "$user")" ]; then
-    if [ "$(id -u)" = 0 ]; then
-        chown -R "$user:" "$dir"
-    else
-        sudo -n chown -R "$user:" "$dir" 2>/dev/null \
-            || echo "homebrew-packages: cannot chown $dir to $user (no root or sudo)" >&2
-    fi
-fi
-exec "$@"
-EOF
-chmod 755 "$ENTRYPOINT"
+# host's after the image is built (updateRemoteUserUID), leaving the prefix
+# owned by a UID nobody has. A group survives that: the prefix belongs to a
+# `linuxbrew` group the user is in, group-writable, so Homebrew can still
+# write to it. git needs telling that a repo owned by another UID is fine.
+getent group linuxbrew >/dev/null || groupadd --system linuxbrew
+usermod -aG linuxbrew "$BREW_USER"
+git config --system --add safe.directory "${PREFIX}/Homebrew"
+git config --system --add safe.directory "${PREFIX}/Homebrew/Library/Taps/*/*"
+share_prefix() {
+    chgrp -R linuxbrew "$PREFIX"
+    chmod -R g+w "$PREFIX"
+    find "$PREFIX" -type d -exec chmod g+s {} +
+}
+share_prefix
 
 # Login shells reset PATH from /etc/profile; put Homebrew back on it
 cat > /etc/profile.d/homebrew.sh <<EOF
@@ -96,5 +88,8 @@ su "$BREW_USER" -c "HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ANALYTICS=1 HOMEBREW_N
 # Keep the image layer small: downloads and caches aren't needed after install
 su "$BREW_USER" -c "$BREW cleanup --prune=all -s" || true
 rm -rf "/home/${BREW_USER}/.cache/Homebrew" 2>/dev/null || true
+
+# What brew just installed was created without group write
+share_prefix
 
 echo "Homebrew packages installed!"
