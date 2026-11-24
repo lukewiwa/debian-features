@@ -1,9 +1,9 @@
 {
     "id": "homebrew-packages",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "name": "Homebrew packages",
     "documentationURL": "https://github.com/lukewiwa/debian-features/tree/main/src/homebrew-packages",
-    "description": "Installs a list of Homebrew packages, like a Brewfile, in one feature. Installs Homebrew first.",
+    "description": "Installs a list of Homebrew packages, like a Brewfile, in one feature. Installs Homebrew first, without cloning homebrew-core.",
     "options": {
         "packages": {
             "type": "string",
@@ -11,7 +11,13 @@
             "description": "Space- or comma-separated Homebrew formulae to install, e.g. 'bat git-delta fzf'"
         }
     },
-    "dependsOn": {
-        "ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2": {}
-    }
+    "containerEnv": {
+        "HOMEBREW_PREFIX": "/home/linuxbrew/.linuxbrew",
+        "HOMEBREW_CELLAR": "/home/linuxbrew/.linuxbrew/Cellar",
+        "HOMEBREW_REPOSITORY": "/home/linuxbrew/.linuxbrew/Homebrew",
+        "PATH": "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils"
+    ]
 }

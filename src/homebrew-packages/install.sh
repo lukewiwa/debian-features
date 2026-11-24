@@ -3,24 +3,71 @@
 set -e
 
 PACKAGES="$(echo "${PACKAGES:-}" | tr ',' ' ')"
-BREW="/home/linuxbrew/.linuxbrew/bin/brew"
+PREFIX="/home/linuxbrew/.linuxbrew"
+BREW="${PREFIX}/bin/brew"
 
-if [ -z "${PACKAGES// /}" ]; then
-    echo "No Homebrew packages requested, nothing to do"
-    exit 0
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Script must be run as root" >&2
+    exit 1
 fi
 
-# Homebrew refuses to run as root, so install as the owner of the Homebrew
-# prefix (the homebrew feature sets that up).
-BREW_USER="$(stat -c %U "$(dirname "$(dirname "$BREW")")")"
-if [ "$BREW_USER" = "root" ]; then
-    echo "Homebrew prefix is owned by root; Homebrew can't install as root" >&2
+# Homebrew refuses to run as root, so the prefix belongs to the container's user
+BREW_USER="${_REMOTE_USER:-}"
+if [ -z "$BREW_USER" ] || [ "$BREW_USER" = "root" ]; then
+    BREW_USER="$(awk -F: '$3 == 1000 { print $1 }' /etc/passwd)"
+fi
+if [ -z "$BREW_USER" ] || [ "$BREW_USER" = "root" ]; then
+    echo "No non-root user to own Homebrew (it can't install as root)" >&2
     exit 1
+fi
+
+# Homebrew's requirements on Linux (https://docs.brew.sh/Homebrew-on-Linux#requirements)
+missing=()
+for pkg in ca-certificates curl file git procps build-essential; do
+    dpkg -s "$pkg" >/dev/null 2>&1 || missing+=("$pkg")
+done
+if [ "${#missing[@]}" -gt 0 ]; then
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y
+    apt-get install -y --no-install-recommends "${missing[@]}"
+    rm -rf /var/lib/apt/lists/*
+fi
+
+# Install Homebrew itself. Formulae come from Homebrew's JSON API, so there is
+# no homebrew-core clone (several GB of history), and Homebrew/brew is cloned
+# shallow at its latest release.
+if [ -x "$BREW" ]; then
+    echo "Homebrew already installed"
+else
+    echo "Installing Homebrew for ${BREW_USER}..."
+    mkdir -p "$PREFIX"
+    tag="$(git ls-remote --tags --refs --sort=-v:refname https://github.com/Homebrew/brew '[0-9]*' \
+        | head -1 | sed 's|.*refs/tags/||')"
+    # Clone main (so `brew update` has origin/main), then sit on the latest
+    # release as `stable`, like Homebrew's own installer
+    git clone --quiet --depth 1 https://github.com/Homebrew/brew "${PREFIX}/Homebrew"
+    if [ -n "$tag" ]; then
+        git -C "${PREFIX}/Homebrew" fetch --quiet --depth 1 origin tag "$tag"
+        git -C "${PREFIX}/Homebrew" checkout --quiet -B stable "$tag"
+    fi
+    mkdir -p "${PREFIX}/bin"
+    ln -sf ../Homebrew/bin/brew "$BREW"
+    chown -R "${BREW_USER}:" "$PREFIX"
+fi
+
+# Login shells reset PATH from /etc/profile; put Homebrew back on it
+cat > /etc/profile.d/homebrew.sh <<EOF
+eval "\$(${BREW} shellenv)"
+EOF
+
+if [ -z "${PACKAGES// /}" ]; then
+    echo "No Homebrew packages requested, nothing more to do"
+    exit 0
 fi
 
 echo "Installing Homebrew packages as ${BREW_USER}: ${PACKAGES}"
 # shellcheck disable=SC2086
-su "$BREW_USER" -c "HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_INSTALL_CLEANUP=1 $BREW install $PACKAGES"
+su "$BREW_USER" -c "HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ENV_HINTS=1 $BREW install $PACKAGES"
 
 # Keep the image layer small: downloads and caches aren't needed after install
 su "$BREW_USER" -c "$BREW cleanup --prune=all -s" || true
