@@ -55,6 +55,30 @@ else
     chown -R "${BREW_USER}:" "$PREFIX"
 fi
 
+# On Linux hosts the dev container CLI changes the user's UID to match the
+# host's after the image is built (updateRemoteUserUID), which leaves the
+# prefix owned by the old UID and Homebrew unable to write to it. Hand it back
+# at container start.
+ENTRYPOINT="/usr/local/share/homebrew-packages/entrypoint.sh"
+mkdir -p "$(dirname "$ENTRYPOINT")"
+cat > "$ENTRYPOINT" <<EOF
+#!/bin/sh
+dir="$PREFIX"
+user="$BREW_USER"
+EOF
+cat >> "$ENTRYPOINT" <<'EOF'
+if [ "$(stat -c %u "$dir")" != "$(id -u "$user")" ]; then
+    if [ "$(id -u)" = 0 ]; then
+        chown -R "$user:" "$dir"
+    else
+        sudo -n chown -R "$user:" "$dir" 2>/dev/null \
+            || echo "homebrew-packages: cannot chown $dir to $user (no root or sudo)" >&2
+    fi
+fi
+exec "$@"
+EOF
+chmod 755 "$ENTRYPOINT"
+
 # Login shells reset PATH from /etc/profile; put Homebrew back on it
 cat > /etc/profile.d/homebrew.sh <<EOF
 eval "\$(${BREW} shellenv)"
