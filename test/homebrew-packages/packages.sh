@@ -10,7 +10,7 @@ check "comma-separated packages are installed" bash -c 'brew list --formula | gr
 check "installed binaries run" hello --version
 check "homebrew-core is not cloned" bash -c '[ ! -e "$(brew --repository)/Library/Taps/homebrew/homebrew-core" ]'
 check "brew is on PATH in login shells" bash -lc 'brew --version'
-check "brew update works cleanly" bash -c 'out=$(brew update 2>&1) && ! grep -qi error <<<"$out"'
+check "brew update works cleanly" bash -c 'out=$(brew update 2>&1); rc=$?; echo "$out"; [ "$rc" -eq 0 ] && ! grep -qi error <<<"$out"'
 check "brew is on a release" bash -c 'git -C "$(brew --repository)" describe --tags --exact-match'
 
 reportResults
